@@ -46,7 +46,7 @@ INSERT(tree, a)
   cur <- tree.root
   while true do
     if a.code == cur.code then
-      return false  // Rule I4: reject duplicate key
+      return false
     else if a.code < cur.code then
       if cur.left == NULL then
         cur.left <- new Node(a)
@@ -175,7 +175,7 @@ VALIDATE(tree)   // range method
   return true
 
 
-INORDER (sorted)
+INORDER (sorted):
   stack <- empty stack of Node*
   cur <- tree.root
 
@@ -211,19 +211,31 @@ SAVE(file):
   for each node u in PREORDER(tree) do
     write_line(stream, u.code)
 
-LOADTREE(file):
-  stream <- open_read(file)
+LOAD_TREE(file):
+  codes <- read_all_lines(file)
+  master <- master_list union collect_records_via_INORDER(tree)
+  old_height <- HEIGHT(tree)
+  old_levels <- collect_codes_via_LEVEL_ORDER(tree)
+
+  clear_nodes(tree.root)
   tree.root <- NULL
-  for each code in stream do
-    record <- lookup(code, master_list)
-    INSERT(tree, record)
+  tree.size <- 0
+
+  for each code in codes do
+    if code in master then
+      INSERT(tree, master[code])
+
+  new_height <- HEIGHT(tree)
+  new_levels <- collect_codes_via_LEVEL_ORDER(tree)
+  print (new_height == old_height) and (new_levels == old_levels)
 
 
 RANGE(from, to)
+  // Expressed recursively for clarity; C++ implementation uses an explicit stack
+  // with identical pruning bounds and node-visit counts.
   visited <- 0
   matches <- 0
 
-  // Pruned recursive/stack-based helper
   PRUNED_INORDER(u):
     if u == NULL then return
     visited <- visited + 1
@@ -250,6 +262,7 @@ BALANCED_BUILD(sorted list a[0..n-1])
     return u
 
   REBALANCE:
-    sorted_records <- collect_records_via_INORDER(tree)
+    a <- collect_records_via_INORDER(tree)
     clear_nodes(tree.root)
-    tree.root <- BUILD_SUBTREE(0, length(sorted_records) - 1)
+    tree.root <- BUILD_SUBTREE(0, length(a) - 1)
+    tree.size <- length(a)
